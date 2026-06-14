@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora Barrenos</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Barrenos" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 2rem; }
+    .card { background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .section-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
+    .inputs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 13px; color: #444; }
+    .field .param-name { font-size: 11px; color: #999; }
+    .field input {
+      padding: 7px 10px; font-size: 14px;
+      border: 1px solid #ddd; border-radius: 7px;
+      outline: none; transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: #555; }
+    .btn-calc {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 22px; font-size: 14px; font-weight: 500;
+      cursor: pointer; border-radius: 8px;
+      background: #1a1a1a; color: #fff; border: none;
+      margin-top: 1.25rem;
+    }
+    .btn-calc:hover { background: #333; }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .metric { background: #f9f9f9; border-radius: 9px; padding: 12px 14px; }
+    .metric .mlabel { font-size: 12px; color: #666; margin-bottom: 2px; }
+    .metric .msymbol { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+    .metric .mval { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+    .metric .munit { font-size: 13px; color: #888; margin-left: 3px; }
+    .fila-block { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .fila-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 12px; }
+    .error { color: #c0392b; font-size: 13px; margin-top: 10px; }
+    #results-section { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Calculadora de Barrenos</h1>
+  <p class="subtitle">Disseny de voladura — Cantonada (Esquina) i Curts</p>
+
+  <div class="card">
+    <p class="section-title">Paràmetres coneguts</p>
+    <div class="inputs-grid">
+      <div class="field">
+        <label>Inclinació barrinades normals</label>
+        <span class="param-name">i (graus)</span>
+        <input type="number" id="inp-i" value="70" min="0" max="90" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Longitud perforació normals</label>
+        <span class="param-name">LN (m)</span>
+        <input type="number" id="inp-LN" value="12" min="0.1" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Angle entre talussos</label>
+        <span class="param-name">&#x3A6; (graus)</span>
+        <input type="number" id="inp-phi" value="90" min="1" max="179" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Pedra (Bordo)</label>
+        <span class="param-name">B (m)</span>
+        <input type="number" id="inp-B" value="3.5" min="0.1" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Espaiament barrinades normals</label>
+        <span class="param-name">E (m)</span>
+        <input type="number" id="inp-E" value="4" min="0.1" step="0.1" />
+      </div>
+    </div>
+    <button class="btn-calc" onclick="calcular()">&#x2713; Calcular paràmetres</button>
+    <div id="error-msg" class="error"></div>
+  </div>
+
+  <div id="results-section">
+    <div class="card">
+      <p class="section-title">Geometria bàsica</p>
+      <div class="results-grid">
+        <div class="metric">
+          <div class="mlabel">Alçada barrinades</div>
+          <div class="msymbol">H</div>
+          <div><span class="mval" id="r-H">—</span><span class="munit">m</span></div>
+        </div>
+        <div class="metric">
+          <div class="mlabel">Avanç barrinada normal</div>
+          <div class="msymbol">AN</div>
+          <div><span class="mval" id="r-AN">—</span><span class="munit">m</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-title">Barrinada de cantonada (Esquina)</p>
+      <div class="results-grid">
+        <div class="metric">
+          <div class="mlabel">Inclinació cantonada</div>
+          <div class="msymbol">&#x3B1;</div>
+          <div><span class="mval" id="r-alpha">—</span><span class="munit">°</span></div>
+        </div>
+        <div class="metric">
+          <div class="mlabel">Long. perforació cantonada</div>
+          <div class="msymbol">LE</div>
+          <div><span class="mval" id="r-LE">—</span><span class="munit">m</span></div>
+        </div>
+        <div class="metric">
+          <div class="mlabel">Avanç cantonada</div>
+          <div class="msymbol">AE</div>
+          <div><span class="mval" id="r-AE">—</span><span class="munit">m</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-title">Distàncies i longituds per fila</p>
+
+      <div class="fila-block">
+        <p class="fila-title">1a fila</p>
+        <div class="results-grid">
+          <div class="metric">
+            <div class="mlabel">Dist. 1r normal</div>
+            <div class="msymbol">DN1</div>
+            <div><span class="mval" id="r-DN1">—</span><span class="munit">m</span></div>
+          </div>
+          <div class="metric">
+            <div class="mlabel">Dist. curt</div>
+            <div class="msymbol">DC1</div>
+            <div><span class="mval" id="r-DC1">—</span><span class="munit">m</span></div>
+          </div>
+          <div class="metric">
+            <div class="mlabel">Long. perforació curt</div>
+            <div class="msymbol">LC1</div>
+            <div><span class="mval" id="r-LC1">—</span><span class="munit">m</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fila-block">
+        <p class="fila-title">2a fila</p>
+        <div class="results-grid">
+          <div class="metric">
+            <div class="mlabel">Dist. 1r normal</div>
+            <div class="msymbol">DN2</div>
+            <div><span class="mval" id="r-DN2">—</span><span class="munit">m</span></div>
+          </div>
+          <div class="metric">
+            <div class="mlabel">Dist. curt</div>
+            <div class="msymbol">DC2</div>
+            <div><span class="mval" id="r-DC2">—</span><span class="munit">m</span></div>
+          </div>
+          <div class="metric">
+            <div class="mlabel">Long. perforació curt</div>
+            <div class="msymbol">LC2</div>
+            <div><span class="mval" id="r-LC2">—</span><span class="munit">m</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function deg2rad(d) { return d * Math.PI / 180; }
+function rad2deg(r) { return r * 180 / Math.PI; }
+
+function calcular() {
+  const errEl = document.getElementById('error-msg');
+  errEl.textContent = '';
+
+  const i   = parseFloat(document.getElementById('inp-i').value);
+  const LN  = parseFloat(document.getElementById('inp-LN').value);
+  const phi = parseFloat(document.getElementById('inp-phi').value);
+  const B   = parseFloat(document.getElementById('inp-B').value);
+  const E   = parseFloat(document.getElementById('inp-E').value);
+
+  if ([i, LN, phi, B, E].some(isNaN)) {
+    errEl.textContent = 'Per favor, introduïu tots els paràmetres correctament.';
+    return;
+  }
+
+  const iR   = deg2rad(i);
+  const phiR = deg2rad(phi);
+
+  const H  = LN * Math.cos(iR);
+  const AN = LN * Math.sin(iR);
+
+  const alphaDen = H * Math.sin(phiR / 2);
+  if (Math.abs(alphaDen) < 1e-9) {
+    errEl.textContent = 'Error: divisió per zero en calcular α (comproveu Φ).';
+    return;
+  }
+  const alphaR = Math.atan(AN / alphaDen);
+  const alpha  = rad2deg(alphaR);
+
+  const LE = H / Math.cos(alphaR);
+  const AE = H * Math.tan(alphaR);
+
+  const DN1 = AE * Math.cos(phiR / 2) + E;
+  const DC1 = DN1 / 2;
+  const DN2 = DN1 + E / 2;
+  const DC2 = DN2 / 2;
+
+  const AEcos = AE * Math.cos(phiR / 2);
+  const LC1 = 0.5 * (LN - (AEcos - DC1) / Math.tan(alphaR));
+  const LC2 = 0.5 * (LN - (AEcos - DC2) / Math.tan(alphaR));
+
+  document.getElementById('r-H').textContent     = H.toFixed(1);
+  document.getElementById('r-AN').textContent    = AN.toFixed(1);
+  document.getElementById('r-alpha').textContent = alpha.toFixed(1);
+  document.getElementById('r-LE').textContent    = LE.toFixed(1);
+  document.getElementById('r-AE').textContent    = AE.toFixed(1);
+  document.getElementById('r-DN1').textContent   = DN1.toFixed(1);
+  document.getElementById('r-DC1').textContent   = DC1.toFixed(1);
+  document.getElementById('r-LC1').textContent   = LC1.toFixed(1);
+  document.getElementById('r-DN2').textContent   = DN2.toFixed(1);
+  document.getElementById('r-DC2').textContent   = DC2.toFixed(1);
+  document.getElementById('r-LC2').textContent   = LC2.toFixed(1);
+
+  document.getElementById('results-section').style.display = 'block';
+}
+
+// Registre del Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js');
+  });
+}
+</script>
+</body>
+</html>

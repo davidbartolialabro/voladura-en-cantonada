@@ -1,0 +1,23 @@
+{
+  "name": "Voladura en Cantonada",
+  "short_name": "Voladura en Cantonada",
+  "description": "Càlcul de paràmetres de barrenos de cantonada i curts",
+  "start_url": "/voladura-en-cantonada/",
+  "scope": "/voladura-en-cantonada/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
